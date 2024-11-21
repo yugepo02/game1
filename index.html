@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Avoid Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            flex-direction: column;
+            z-index: 10;
+        }
+        #startButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        /* HPバーのスタイル */
+        #hpBarContainer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 100px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+          
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #hpBar {
+            height: 100%;
+            width: 100%; /* 初期は満タン */
+            background-color:greenyellow; /* HPバーの色 */
+        }
+
+          /* 敵のHPバーのスタイル */
+          #enemyHpBarContainer {
+            position: absolute;
+            top: 10px;
+          
+            width: 100px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #enemyHpBar {
+            height: 100%;
+            width: 200%; /* 初期は満タン */
+            background-color: red; /* 敵のHPバーの色 */
+            border: 1px solid #000;
+        }
+
+        /* リトライボタンのスタイル */
+        #retryButton {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- スタート画面 -->
+    <div id="startScreen">
+        <div>3D Avoid Game</div>
+        <button id="startButton">スタート</button>
+    </div>
+
+    <!-- HPバー -->
+    <div id="hpBarContainer">
+        <div id="hpBar"></div>
+    </div>
+   <!-- 敵のHPバー -->
+<!-- 敵のHPバー -->
+<div id="enemyHpBarContainer" style="position: absolute; right: 10px; bottom: 500px;">
+    <div id="enemyHpBar"></div>
+</div>
+    <!-- リトライボタン -->
+    <button id="retryButton">リトライ</button>
+
+    <!-- Three.jsのライブラリ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="./sketch.js"></script>
+</body>
+</html>

@@ -2,10 +2,12 @@
 let isPaused = true;
 const INITIAL_OBSTACLE_SPEED = 0.3; // 最初の障害物速度
 
+
 let isInvincible = false; // 無敵状態かどうかを示すフラグ
 let remainingTime = 3000;      // 無敵状態の残り時間 (ミリ秒)
 const interval = 100;          // チェック間隔 (ミリ秒)
 
+let isGameOver = false;
 
  // BGMとSEの音量調整
  const bgm = document.getElementById('bgm');
@@ -38,6 +40,7 @@ const pausestartButton = document.getElementById('pausestartButton')
  // スタートボタンのイベント
  document.getElementById('startButton').addEventListener('click', () => {
     bgm.play();
+ 
      document.getElementById('startScreen').style.display = 'none';  // スタート画面非表示
  });
 
@@ -150,7 +153,7 @@ startmenyuButton.addEventListener('click',()=>{
 
 // ゲーム開始関数
 function startGame() {
-   
+     isGameOver = false;
     isPaused = false; // ポーズを解除
     playerHP = 3; // HPを初期化
     enemyHP = 100
@@ -223,7 +226,9 @@ function getRandomColor() {
 function gameOver() {
     document.getElementById('bgm').pause();
     isPaused = true; // ゲームを一時停止
+    isGameOver = true; // ゲームオーバーフラグを立てる
     retryButton.style.display = 'block'; // リトライボタンを表示
+
 }
 // レーンの設定
 const laneWidth = 1.8; // レーンの幅
@@ -296,12 +301,19 @@ let jumpVelocity = 0;
 const gravity = 0.05; // 重力
 
 // ポーズ機能のキーイベント
-document.addEventListener('keydown', (e) => {
+function handleKeyDown(e) {
+    // ゲームオーバー中はキーイベントを無視
+    if (isGameOver) {
+        return;
+    }
+
     if (e.key === 'p' || e.key === 'P') {
         isPaused = !isPaused; // ポーズのON/OFFを切り替え
         togglePause();
     }
-});
+}
+document.addEventListener('keydown', handleKeyDown);
+
 // 被弾した時に呼び出される関数
 function takeDamage() {
    
@@ -755,6 +767,7 @@ if (playerBoundingBox.intersectsBox(obstacle.boundingBox)) {
                 // HPが0以下ならゲームオーバー
                 if (playerHP <= 0) {
                     gameOver(); // ゲームオーバー処理を呼び出し
+                    
                 }
                 scene.remove(obstacle); // 衝突した障害物を削除
                 obstacles.splice(index, 1); // 配列からも削除
@@ -765,7 +778,7 @@ if (playerBoundingBox.intersectsBox(obstacle.boundingBox)) {
                 obstacles.splice(index, 1);
             }
         });
-        if (Math.random() < 0.03) createObstacle(); // 障害物の生成確率
+        if (Math.random() < 0.05) createObstacle(); // 障害物の生成確率
     }
     renderer.render(scene, camera);
     requestAnimationFrame(gameLoop);

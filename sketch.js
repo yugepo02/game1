@@ -2,12 +2,20 @@
 let isPaused = true;
 const INITIAL_OBSTACLE_SPEED = 0.3; // 最初の障害物速度
 
-
 let isInvincible = false; // 無敵状態かどうかを示すフラグ
 let remainingTime = 3000;      // 無敵状態の残り時間 (ミリ秒)
 const interval = 100;          // チェック間隔 (ミリ秒)
 
-let isGameOver = false;
+let canAbsorb = true; // 障害物を吸収できるかどうかを示すフラグ
+
+let reach = 4;
+
+//障害物の設定
+let lastObstacleTime = 0; // 障害物の生成タイマー
+let obstacleDuration = 3; // 連続で出現する時間（秒）
+let obstacleGenerationInterval = 0.5; // 障害物が出現する間隔（秒）
+let activeLane = null; // 現在障害物を生成するレーン（最初はnull）
+
 
  // BGMとSEの音量調整
  const bgm = document.getElementById('bgm');
@@ -27,6 +35,11 @@ const retryButtonpause = document.getElementById('retryButtonpause');
 const startmenyuButton = document.getElementById('startmenyuButton');
 const pausestartButton = document.getElementById('pausestartButton')
 
+//ゲームオーバー画面要素
+const gameoverscreen = document.getElementById('gameoverscreen');
+const gameoverretryButton =document.getElementById('gameoverretryButton');
+const gameoverstartButton  =document.getElementById('gameoverstartButton'); 
+
  document.getElementById('bgmVolume').addEventListener('input', (event) => {
      bgm.volume = event.target.value;
      Fanbgm.volume = event.target.value
@@ -40,7 +53,6 @@ const pausestartButton = document.getElementById('pausestartButton')
  // スタートボタンのイベント
  document.getElementById('startButton').addEventListener('click', () => {
     bgm.play();
- 
      document.getElementById('startScreen').style.display = 'none';  // スタート画面非表示
  });
 
@@ -74,6 +86,78 @@ lectureBack.addEventListener('click', () => {
  
     document.getElementById('lectureScreen').style.display = 'none';  // 説明画面非表示
 });
+
+//ゲームオーバー画面のリトライボタン
+gameoverretryButton.addEventListener('click',()=>{
+    document.getElementById('gameoverscreen').style.display='none';
+    resetGame();
+    startGame();
+})
+
+//ゲームオーバーのスタート画面ボタン
+gameoverstartButton.addEventListener('click',()=>{
+     gameoverscreen.style.display='none';
+     startScreen .style.display='flex';
+    resetGame(); // ゲームをリセット
+
+})
+
+let difficulty = "normal"; // 初期難易度
+let obstacleGenerationRate;
+
+// 難易度を設定する関数
+function setDifficulty(level) {
+    difficulty = level;
+    const buttons = document.querySelectorAll("#difficulty-buttons button");
+    
+    // ボタンのスタイルを更新
+    buttons.forEach((button) => {
+        if (button.textContent.toLowerCase() === level) {
+            button.style.backgroundColor = "lightblue"; // 選択中の難易度を視覚化
+        } else {
+            button.style.backgroundColor = ""; // 他のボタンはデフォルト
+        }
+    });
+
+    // 難易度に応じた生成確率の変更
+if (difficulty === "easy") {
+    obstacleGenerationRate = 0.04;
+    reach=5;
+} else if (difficulty === "normal") {
+    obstacleGenerationRate = 0.04;
+    reach=4;
+} else if (difficulty === "hard") {
+    obstacleGenerationRate = 0.1;
+} else {
+    console.warn("Unknown difficulty level. Defaulting to normal.");
+    obstacleGenerationRate = 0.03;
+    reach=3;
+}
+
+
+    console.log(`Difficulty set to: ${difficulty}`);
+}
+
+// 初期化時に難易度をセット
+setDifficulty("normal");
+
+// 障害物生成の更新ロジック
+function updateObstacleGeneration(deltaTime) {
+    lastObstacleTime += deltaTime;
+
+    if (lastObstacleTime >= obstacleGenerationInterval) {
+        // 難易度に応じて障害物を生成
+        if (Math.random() < obstacleGenerationRate) {
+            createObstacle();
+        }
+        if (Math.random() < obstacleGenerationRate / 2) {
+            const randomLane = randomXPositions[Math.floor(Math.random() * randomXPositions.length)];
+            createObstacleInLaneWithPosition(randomLane);
+        }
+        lastObstacleTime = 0; // タイマーリセット
+    }
+}
+
 
 // ゲーム開始フラグ
 let enemyHP = 100; // 敵の初期HP
@@ -153,7 +237,7 @@ startmenyuButton.addEventListener('click',()=>{
 
 // ゲーム開始関数
 function startGame() {
-     isGameOver = false;
+   
     isPaused = false; // ポーズを解除
     playerHP = 3; // HPを初期化
     enemyHP = 100
@@ -169,7 +253,6 @@ function resetGame() {
     // プレイヤー関連のリセット
     playerHP = 3; // HPをリセット
     enemyHP = 100;
-    updateHPBar(); // HPバーを更新
     updateEnemyHPBar(enemyHP)
     player.position.set(-0.9000000000000001, 0.25, 7); // プレイヤーの初期位置
     playerMaterial.color.set(0xffffff); // プレイヤーの色を白に戻す
@@ -226,9 +309,7 @@ function getRandomColor() {
 function gameOver() {
     document.getElementById('bgm').pause();
     isPaused = true; // ゲームを一時停止
-    isGameOver = true; // ゲームオーバーフラグを立てる
-    retryButton.style.display = 'block'; // リトライボタンを表示
-
+     gameoverscreen.style.display='flex'
 }
 // レーンの設定
 const laneWidth = 1.8; // レーンの幅
@@ -253,6 +334,55 @@ let absorbedColor = null;
 const player = new THREE.Mesh(playerGeometry, playerMaterial);
 player.position.set(-0.9000000000000001, 0.25, 7); // プレイヤーを手前に配置
 scene.add(player);
+
+const randomXPositions = [-2.7,-0.9000000000000001,0.8999999999999999,2.7]; // 使用するレーン（X軸の位置）
+
+
+
+function createObstacleInLane() {
+    const lane = randomXPositions[Math.floor(Math.random() * randomXPositions.length)];
+    createObstacleInLaneWithPosition(lane);
+}
+
+// 障害物を生成する関数
+function createObstacleInLaneWithPosition(lane) {
+    const obstacleMaterial = new THREE.MeshBasicMaterial({ color: getRandomColor() });
+    
+    // 固定された形状（小さいサイズ）
+    const obstacleGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+
+    // レーンに基づいて位置を設定
+    obstacle.position.x = lane;
+    obstacle.position.y = 0.25; // 固定高さ
+    obstacle.position.z = -5;  // 画面外から開始
+
+    // バウンディングボックスを設定
+    obstacle.geometry.computeBoundingBox();
+    obstacle.boundingBox = new THREE.Box3().setFromObject(obstacle);
+
+    scene.add(obstacle);
+    obstacles.push(obstacle);
+}
+
+
+function updateObstacleGeneration(deltaTime) {
+    lastObstacleTime += deltaTime;
+
+    if (lastObstacleTime >= obstacleGenerationInterval) {
+        lastObstacleTime = 0; // タイマーをリセット
+
+        const randomChoice = Math.random();
+        if (randomChoice < 0.3) {
+            // 50% の確率でランダムな障害物を生成
+            createObstacle();
+        } else {
+            // 50% の確率で特定レーンに障害物を生成
+            createObstacleInLane();
+        }
+    }
+}
+
 
 // 障害物の生成関数（障害物ごとにバウンディングボックスを設定）
 function createObstacle() {
@@ -301,19 +431,12 @@ let jumpVelocity = 0;
 const gravity = 0.05; // 重力
 
 // ポーズ機能のキーイベント
-function handleKeyDown(e) {
-    // ゲームオーバー中はキーイベントを無視
-    if (isGameOver) {
-        return;
-    }
-
+document.addEventListener('keydown', (e) => {
     if (e.key === 'p' || e.key === 'P') {
         isPaused = !isPaused; // ポーズのON/OFFを切り替え
         togglePause();
     }
-}
-document.addEventListener('keydown', handleKeyDown);
-
+});
 // 被弾した時に呼び出される関数
 function takeDamage() {
    
@@ -378,7 +501,7 @@ function checkAndRecoverHP() {
         updateHPBar(); // HPバーを更新
         lastHitTime = Date.now(); // HP回復後、被弾時間をリセット
     } else if (playerHP >= 3) {
-        // HPが3以上の場合、何もしない（else の記述も省略可能）
+        // HPが3以上の場合、何もしない（
         return;
     }
     }
@@ -393,7 +516,7 @@ function handlePlayerInput(e) {
         }
         if (e.key === "ArrowRight") {
             player.position.x += laneWidth;
-            console.log(player.position);
+           
         }
         if (e.key === " " && !isJumping) {
             isJumping = true;
@@ -441,17 +564,26 @@ function fireBeam() {
 }
 // 障害物を吸収する関数
 function absorbObstacle() {
+    if (!canAbsorb) return; // クールタイム中は吸収しない
+
     let nearestObstacle = null;
     let minDistance = Infinity;
+    
     obstacles.forEach((obstacle) => {
-        const distance = player.position.distanceTo(obstacle.position);
-        if (distance < minDistance) {
-            minDistance = distance;
-            nearestObstacle = obstacle;
+        // 正面の障害物判定 (プレイヤーと同じX座標近くにある)
+        if (Math.abs(player.position.x - obstacle.position.x) < 0.1) {
+            // 距離を計算
+            const distance = player.position.distanceTo(obstacle.position);
+
+            // 最も近い障害物を特定
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestObstacle = obstacle;
+            }
         }
     });
 
-    if (nearestObstacle && minDistance < 2) { // 障害物がプレイヤーの近くにある場合
+    if (nearestObstacle && minDistance < reach) { // 障害物がプレイヤーの近くにある場合
         const obstacleColor = nearestObstacle.material.color.getHexString();
         document.getElementById('drainSE').play();
         // 吸収した色を記録
@@ -767,7 +899,6 @@ if (playerBoundingBox.intersectsBox(obstacle.boundingBox)) {
                 // HPが0以下ならゲームオーバー
                 if (playerHP <= 0) {
                     gameOver(); // ゲームオーバー処理を呼び出し
-                    
                 }
                 scene.remove(obstacle); // 衝突した障害物を削除
                 obstacles.splice(index, 1); // 配列からも削除
@@ -778,7 +909,7 @@ if (playerBoundingBox.intersectsBox(obstacle.boundingBox)) {
                 obstacles.splice(index, 1);
             }
         });
-        if (Math.random() < 0.05) createObstacle(); // 障害物の生成確率
+        if (Math.random() < obstacleGenerationRate)  createObstacle(); // 障害物の生成確率
     }
     renderer.render(scene, camera);
     requestAnimationFrame(gameLoop);

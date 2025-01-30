@@ -175,6 +175,59 @@
             font-size: 20px;
             cursor: pointer;
         }
+        #gameoverscreen{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            flex-direction: column;
+            z-index: 10;
+        }
+        #gameoverretryButton{
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        #gameoverstartButton{
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        #difficulty-label {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+
+    #difficulty-buttons {
+        position: absolute;
+        top: 40px; /* '難易度' テキストの下に配置 */
+        left: 10px;
+     
+    }
+
+    #difficulty-buttons button {
+        margin: 5px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    #difficulty-buttons button:hover {
+        background-color: #ddd;
+    }
     </style>
 </head>
 <body>
@@ -183,6 +236,13 @@
         <div>3D Avoid Game</div>
         <button id="startButton">スタート</button>
         <button id="lectureButton">操作ガイド</button>
+        <div id="difficulty-label">難易度</div>
+        <div id="difficulty-buttons">
+            <button onclick="setDifficulty('easy')">Easy</button>
+            <button onclick="setDifficulty('normal')">Normal</button>
+            <button onclick="setDifficulty('hard')">Hard</button>
+        </div>
+        
     </div>
 
     <!-- HPバー -->
@@ -304,6 +364,14 @@
         </div>
         <br>
         <button id="lectureBack">閉じる</button>
+    </div>
+    <!--ゲームオーバー画面-->
+    <div id="gameoverscreen">
+        <h1>ゲームオーバー</h1>
+        <button id="gameoverretryButton">リトライ</button>
+        <button id="gameoverstartButton">スタート画面に戻る</button>
+
+
     </div>
 
 
